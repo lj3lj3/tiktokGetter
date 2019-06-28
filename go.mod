@@ -1,4 +1,4 @@
-module douyinGetter
+module tiktokGetter
 
 go 1.12
 
