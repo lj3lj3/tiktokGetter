@@ -16,7 +16,7 @@ import (
 	"time"
 )
 
-type likeMessage struct {
+type douyinMessage struct {
 	Id  int    `json:"id"`
 	Url string `json:"url"`
 }
@@ -62,7 +62,7 @@ func main() {
 		}
 
 		fmt.Printf("read data by using brPop: %v \n", result)
-		msg := &likeMessage{}
+		msg := &douyinMessage{}
 		// the 0 index in the result is key name, the 1 index in the result is value
 		if err = json.Unmarshal([]byte(result[1]), msg); err != nil {
 			fmt.Printf("error in unmarshal results from brPop, %v \n", err)
@@ -82,7 +82,7 @@ func main() {
 	}
 }
 
-func getLikeCount(message *likeMessage) {
+func getLikeCount(message *douyinMessage) {
 	// validate message
 	urlTmp, err := url.Parse(message.Url)
 	if err != nil {
@@ -151,7 +151,7 @@ func getUrlContent(url string) ([]byte, error) {
 	return body, nil
 }
 
-func writeLikeCount(message *likeMessage, likeCount int) {
+func writeLikeCount(message *douyinMessage, likeCount int) {
 	result, err := db.NamedExec("UPDATE df_signup SET likes = :likeCount WHERE id = :id", map[string]interface{}{
 		"likeCount": likeCount,
 		"id":        message.Id,
@@ -159,8 +159,8 @@ func writeLikeCount(message *likeMessage, likeCount int) {
 	if err != nil {
 		fmt.Printf("[%d]error in updating database record: %v \n", message.Id, err)
 	}
-	affected, err := result.RowsAffected()
-	if err != nil || affected <= 0 {
+	_, err = result.RowsAffected()
+	if err != nil {
 		fmt.Printf("[%d]error in updating database record: %v \n", message.Id, err)
 	}
 }

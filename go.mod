@@ -1,4 +1,4 @@
-module likeGetter
+module douyinGetter
 
 go 1.12
 
