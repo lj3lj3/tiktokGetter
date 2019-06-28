@@ -77,12 +77,12 @@ func main() {
 			defer func() {
 				<-concurrentLimit
 			}()
-			getLikeCount(msg)
+			getDouyinData(msg)
 		}()
 	}
 }
 
-func getLikeCount(message *douyinMessage) {
+func getDouyinData(message *douyinMessage) {
 	// validate message
 	urlTmp, err := url.Parse(message.Url)
 	if err != nil {
@@ -104,27 +104,46 @@ func getLikeCount(message *douyinMessage) {
 	reg, _ := regexp.Compile("&#x(.{4});")
 	bodyStr := reg.ReplaceAllString(string(content), ";x$1;")
 
-	// get like count from body
+	// Init document
 	document, err := goquery.NewDocumentFromReader(strings.NewReader(bodyStr))
 	if err != nil {
 		fmt.Printf("[%d]error in parsing response: %v \n", message.Id, err)
 		return
 	}
+
+	data := make(map[string]string)
+	// Get like count
+	likeCount, err := getCount(document, message, ".info-like>.count>i")
+	if err != nil {
+		return
+	}
+	data["like"] = strconv.Itoa(likeCount)
+
+	// Get comment count
+	commentCount, err := getCount(document, message, ".info-comment>.count>i")
+	if err != nil {
+		return
+	}
+	data["comment"] = strconv.Itoa(commentCount)
+
+	// write back to database
+	writeDouyinData(message, data)
+}
+
+func getCount(document *goquery.Document, message *douyinMessage, selector string) (int, error) {
 	countStr := ""
-	document.Find(".info-like>.count>i").Each(func(i int, selection *goquery.Selection) {
+	document.Find(selector).Each(func(i int, selection *goquery.Selection) {
 		countStr += strconv.Itoa(getDigitFromFontString("&#" + selection.Text()[2:]))
 	})
 	// parse to int
 	count, err := strconv.Atoi(countStr)
 	if err != nil {
 		fmt.Printf("[%d]error in parsing count to int: %v \n", message.Id, err)
-		return
+		return 0, err
 	}
 
-	fmt.Printf("[%d]like count: %d \n", message.Id, count)
-
-	// write back to database
-	writeLikeCount(message, count)
+	fmt.Printf("[%d]%s, count: %d \n", message.Id, selector, count)
+	return count, nil
 }
 
 func getUrlContent(url string) ([]byte, error) {
@@ -141,7 +160,9 @@ func getUrlContent(url string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer response.Body.Close()
+	defer func() {
+		_ = response.Body.Close()
+	}()
 
 	body, err := ioutil.ReadAll(response.Body)
 	if err != nil {
@@ -151,10 +172,11 @@ func getUrlContent(url string) ([]byte, error) {
 	return body, nil
 }
 
-func writeLikeCount(message *douyinMessage, likeCount int) {
-	result, err := db.NamedExec("UPDATE df_signup SET likes = :likeCount WHERE id = :id", map[string]interface{}{
-		"likeCount": likeCount,
-		"id":        message.Id,
+func writeDouyinData(message *douyinMessage, data map[string]string) {
+	result, err := db.NamedExec("UPDATE df_signup SET likes = :likeCount, comments = :commentCount WHERE id = :id", map[string]interface{}{
+		"likeCount":    data["like"],
+		"commentCount": data["comment"],
+		"id":           message.Id,
 	})
 	if err != nil {
 		fmt.Printf("[%d]error in updating database record: %v \n", message.Id, err)
