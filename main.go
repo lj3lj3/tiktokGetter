@@ -85,6 +85,8 @@ func main() {
 					fmt.Printf("RECOVERED: %v, %s\n", err, debug.Stack())
 				}
 			}()
+
+			fmt.Printf("time: %s \n", time.Now().Format("2006-01-02 03-04-05"))
 			getTiktokData(msg)
 		}()
 	}
