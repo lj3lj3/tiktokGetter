@@ -38,7 +38,7 @@ func init() {
 
 	// init database
 	fmt.Print("connecting database...")
-	dbTmp, err := sqlx.Connect("mysql", "bm201906:S5H2c4Y8@tcp(127.0.0.1:3306)/bm201906")
+	dbTmp, err := sqlx.Connect("mysql", "19xxjjy:d4G8f6a4@tcp(127.0.0.1:3306)/19xxjjy")
 	if err != nil {
 		fmt.Printf("\nerror in connecting to mysql: %v \n", err)
 	} else {
@@ -265,9 +265,9 @@ func getUrlContent(url string) ([]byte, error) {
 }
 
 func writeTiktokData(message *tiktokMessage, data map[string]string) {
-	result, err := db.NamedExec("UPDATE df_signup SET likes = :likeCount, comments = :commentCount,"+
-		"user_name = :userName, user_tiktok_id = :userTiktokId, user_avatar = :userAvatar, video_poster = :videoPoster, "+
-		"video = :video, video_title = :videoTitle WHERE id = :id", map[string]interface{}{
+	result, err := db.NamedExec("UPDATE df_person SET tiktok_likes = :likeCount, tiktok_comments = :commentCount,"+
+		"tiktok_user_name = :userName, tiktok_user_id = :userTiktokId, tiktok_user_avatar = :userAvatar, tiktok_video_poster = :videoPoster, "+
+		"tiktok_video = :video, tiktok_video_title = :videoTitle WHERE id = :id", map[string]interface{}{
 		"likeCount":    data["like"],
 		"userName":     data["user_name"],
 		"userTiktokId": data["user_tiktok_id"],
