@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"path"
@@ -81,7 +82,6 @@ func downloadFile(url string, fileName string) (string, error) {
 	// Create folders
 	folder := rootPath + "/wwwroot/upload/getter/"
 	if err := os.MkdirAll(folder, 0755); err != nil {
-		fmt.Printf("error in making folders : %v \n", err)
 		return "", err
 	}
 
@@ -106,11 +106,10 @@ func downloadFile(url string, fileName string) (string, error) {
 	if _, err := os.Stat(file); os.IsNotExist(err) {
 		// Not exists
 		startTime := time.Now()
-		fmt.Printf("downloading file: %s \n", fileName)
+		fmt.Printf("Downloading file: %s \n", fileName)
 
 		filePtr, err := os.Create(file)
 		if err != nil {
-			fmt.Printf("error in creating file: %v \n", err)
 			return "", err
 		}
 		defer func() {
@@ -118,12 +117,28 @@ func downloadFile(url string, fileName string) (string, error) {
 		}()
 
 		if _, err := io.Copy(filePtr, resp.Body); err != nil {
-			fmt.Printf("error in writring file: %v \n", err)
 			return "", err
 		}
 
-		fmt.Printf("downloading file DONE: %s,%s, time cost:%d \n", fileName, url, time.Since(startTime))
+		fmt.Printf("Downloading file DONE: %s,%s, time cost:%d \n", fileName, url, time.Since(startTime))
 	}
 
 	return "/upload/getter/" + fileName + "." + extension, nil
+}
+
+func getUrlContent(url string) ([]byte, error) {
+	response, err := httpGet(url)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		_ = response.Body.Close()
+	}()
+
+	body, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	return body, nil
 }
