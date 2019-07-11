@@ -1,4 +1,4 @@
-module tiktokGetter
+module videoGetter
 
 go 1.12
 
